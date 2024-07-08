@@ -1,0 +1,30 @@
+package com.code.bongpaldev.yahtzeee
+
+class Dices {
+    private val dices = IntArray(5) { 1 }
+    private val rollDice = MutableList(5) { it }
+
+    fun roll(): IntArray {
+        for (i in rollDice) {
+            dices[i] = (1..6).random()
+        }
+
+        return dices
+    }
+
+    fun hold(index: Int) {
+        if (rollDice.contains(index)) {
+            rollDice.remove(index)
+        } else {
+            rollDice.add(index)
+        }
+        rollDice.sort()
+    }
+
+    fun currentDices() = dices
+
+    fun resetDice() {
+        rollDice.clear()
+        dices.fill(0)
+    }
+}
