@@ -1,11 +1,14 @@
 package com.code.bongpaldev.yahtzeee.ui.theme
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Typography
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.code.bongpaldev.yahtzeee.R
 
@@ -22,6 +25,11 @@ val Typography = Typography(
         fontFamily = FontFamily(Font(R.font.jejudoldam)),
         color = Color.White,
         fontSize = 24.sp,
+        fontWeight = FontWeight.Thin
+    ),
+    labelLarge = TextStyle(
+        fontSize = 24.sp,
+        fontFamily = FontFamily(Font(R.font.jejudoldam)),
         fontWeight = FontWeight.Thin
     )
 

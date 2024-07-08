@@ -1,4 +1,4 @@
-package com.code.bongpaldev.yahtzeee
+package com.code.bongpaldev.yahtzeee.ui.game
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -35,33 +35,44 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.code.bongpaldev.yahtzeee.model.LOWER
+import com.code.bongpaldev.yahtzeee.R
+import com.code.bongpaldev.yahtzeee.RESULT_SCREEN
+import com.code.bongpaldev.yahtzeee.Score
+import com.code.bongpaldev.yahtzeee.model.ScoreType
+import com.code.bongpaldev.yahtzeee.model.UPPER
 import com.code.bongpaldev.yahtzeee.ui.theme.ButtonDisable
 import com.code.bongpaldev.yahtzeee.ui.theme.Active
 import com.code.bongpaldev.yahtzeee.ui.theme.PickAble
 import com.code.bongpaldev.yahtzeee.ui.theme.Typography
-import com.code.bongpaldev.yahtzeee.ui.theme.YahtzeeeTheme
 
 const val TAG = "Yahtzeeeeeeee"
 
 @Composable
-fun GameScreen(paddingValues: PaddingValues = PaddingValues()) {
+fun GameScreen(
+    navController: NavController,
+    paddingValues: PaddingValues = PaddingValues()
+) {
     val viewModel = remember { GameViewModel() }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .padding(bottom = 24.dp),
+            .padding(bottom = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        PointArea(modifier = Modifier.weight(2.6f), viewModel)
-        PointDisplay(modifier = Modifier.weight(0.5f), viewModel)
+        val isGameOver by viewModel.isGameOver.observeAsState()
+        if (isGameOver!!) {
+            navController.navigate(RESULT_SCREEN)
+        }
+
+        PointArea(modifier = Modifier.weight(2.3f), viewModel)
+        PointDisplay(modifier = Modifier.weight(0.4f), viewModel)
         DiceArea(Modifier.weight(1f), viewModel)
         ButtonArea(modifier = Modifier.weight(0.5f), viewModel)
     }
@@ -72,25 +83,26 @@ fun PointArea(
     modifier: Modifier,
     viewModel: GameViewModel
 ) {
-    val scores = viewModel.scores.observeAsState()
+    val scores = viewModel.scoreSheet.observeAsState()
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-//            .background(Color.Blue)
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
 
         PointSection(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(0.6f),
             section = scores.value?.filter { it.scoreType.section == UPPER } ?: emptyList(),
             viewModel = viewModel
         )
+
         PointSection(
             modifier = Modifier.weight(1f),
             section = scores.value?.filter { it.scoreType.section == LOWER } ?: emptyList(),
             viewModel = viewModel
+
         )
     }
 }
@@ -105,54 +117,49 @@ fun PointSection(
     Column(
         modifier = modifier
             .fillMaxHeight(),
-//            .background(color = Color.Yellow),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
 
-        section.forEach {
+        section.forEach { score ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
-//                    .background(Color.Green),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
+                val newTurn by viewModel.isNewTurn.observeAsState()
+
+                Image(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .aspectRatio(1f)
-                        .background(Color.Magenta)
                         .clickable {
-                            if (it
-                                    .isPick()
-                                    .not()
-                            ) {
-                                viewModel.selectScore(it.scoreType)
-                            }
+                            if (!score.isPick && newTurn!!.not()) viewModel.selectScore(
+                                score.scoreType
+                            )
                         },
-                    contentAlignment = Alignment.Center
+                    painter = getScoreImage(type = score.scoreType), contentDescription = null
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.CenterStart
                 ) {
                     Text(
-                        text = it.scoreType.name,
-                        fontSize = 16.sp
+                        text = when {
+                            score.isPick -> score.score.toString()
+                            score.score == 0 && score.isSelected.not() -> ""
+                            else -> score.score.toString()
+                        },
+                        color = when {
+                            score.isPick -> Color.Black
+                            score.isSelected -> Active
+                            else -> Color.LightGray
+                        },
+                        style = Typography.labelLarge,
+                        modifier = Modifier.padding(start = 12.dp)
                     )
                 }
-
-                Text(
-                    text = when {
-                        it.getScorePoint() == 0 && it.isSelect().not() -> ""
-                        else -> it.getScorePoint().toString()
-                    },
-                    fontSize = 24.sp,
-                    color = when {
-                        it.isPick() -> Color.Black
-                        it.isSelect() -> Active
-                        else -> Color.LightGray
-                    },
-                    fontFamily = FontFamily(Font(R.font.jejudoldam)),
-                    modifier = Modifier.padding(start = 24.dp),
-                    fontWeight = FontWeight.Thin
-                )
             }
         }
     }
@@ -196,7 +203,7 @@ fun PointDisplay(modifier: Modifier, viewModel: GameViewModel) {
 
 @Composable
 fun DiceArea(modifier: Modifier, viewModel: GameViewModel) {
-    val diceState = viewModel.currentDices.observeAsState()
+    val dices by viewModel.dices.observeAsState()
 
     Row(
         modifier = modifier
@@ -205,11 +212,11 @@ fun DiceArea(modifier: Modifier, viewModel: GameViewModel) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
 
-        diceState.value?.forEachIndexed { index, dice ->
+        dices?.forEachIndexed { index, dice ->
             DiceItem(
                 index = index,
-                number = dice.getValue(),
-                isActive = dice.isActive(),
+                number = dice.value,
+                isActive = dice.isActive,
                 viewModel = viewModel,
                 modifier = Modifier
                     .weight(1f)
@@ -254,7 +261,7 @@ fun DiceItem(
                 .aspectRatio(1f)
                 .background(Color.LightGray, shape = RoundedCornerShape(8.dp))
                 .clickable {
-                    viewModel.holdDice(index)
+                    if (isNewTurn.value!!.not()) viewModel.holdDice(index)
                 },
             contentAlignment = Alignment.Center
         ) {
@@ -281,6 +288,28 @@ private fun getDiceImage(num: Int): Painter {
 }
 
 @Composable
+private fun getScoreImage(type: ScoreType): Painter {
+    return painterResource(
+        when (type) {
+            ScoreType.Aces -> R.drawable.img_dice_1
+            ScoreType.Twos -> R.drawable.img_dice_2
+            ScoreType.Threes -> R.drawable.img_dice_3
+            ScoreType.Fours -> R.drawable.img_dice_4
+            ScoreType.Fives -> R.drawable.img_dice_5
+            ScoreType.Sixes -> R.drawable.img_dice_6
+            ScoreType.ThreeOfAKind -> R.drawable.pair_1
+            ScoreType.FourOfAKind -> R.drawable.pair_2
+            ScoreType.FullHouse -> R.drawable.pair_3
+            ScoreType.SmallStraight -> R.drawable.pair_4
+            ScoreType.LargeStraight -> R.drawable.pair_5
+            ScoreType.Yahtzee -> R.drawable.pair_7
+            ScoreType.Chance -> R.drawable.pair_6
+            else -> throw IllegalArgumentException("Score Type Error")
+        }
+    )
+}
+
+@Composable
 fun ButtonArea(
     modifier: Modifier,
     viewModel: GameViewModel
@@ -299,17 +328,19 @@ fun ButtonArea(
                 .weight(1f),
             colors = RollButtonColor(),
             shape = RoundedCornerShape(8.dp),
-            onClick = { viewModel.rollDices(); viewModel.checkScore(); },
+            onClick = {
+                viewModel.rollDices();
+            },
             content = { Text(text = "Roll", style = Typography.displayLarge) }
         )
 
-        val selectedAny = viewModel.selectedAny.observeAsState()
+        val isSelected = viewModel.currentSelected.observeAsState().value != null
 
         Button(
             modifier = modifier
                 .fillMaxHeight()
                 .weight(1f),
-            enabled = selectedAny.value!!,
+            enabled = isSelected,
             colors = ButtonDefaults.buttonColors(
                 containerColor = PickAble,
                 disabledContainerColor = ButtonDisable
@@ -336,12 +367,4 @@ fun RollButtonColor(): ButtonColors {
         containerColor = Active,
         disabledContainerColor = ButtonDisable
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GameScreenPreview() {
-    YahtzeeeTheme {
-        GameScreen()
-    }
 }

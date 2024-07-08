@@ -1,4 +1,4 @@
-package com.code.bongpaldev.yahtzeee
+package com.code.bongpaldev.yahtzeee.model
 
 const val UPPER = 1
 const val LOWER = 2
